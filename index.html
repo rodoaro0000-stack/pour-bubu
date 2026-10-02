@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pour Bubu 💗</title>
+<link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600&display=swap" rel="stylesheet">
+<style>
+:root{--bg1:#0d0420;--bg2:#3a0f45;--pink:#ff6fa5;--soft:#ffd6e5;box-sizing:border-box;
+padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+html,body{height:100%;margin:0;overflow:hidden;font-family:'Dancing Script',cursive,Georgia,serif;
+background:linear-gradient(180deg,var(--bg1),var(--bg2));color:var(--soft);-webkit-tap-highlight-color:transparent;user-select:none}
+canvas{position:fixed;inset:0}
+#txt{position:fixed;left:0;right:0;top:42%;transform:translateY(-50%);text-align:center;padding:0 24px;
+font-size:clamp(30px,7vw,64px);line-height:1.25;opacity:0;transition:opacity 1s;pointer-events:none;text-shadow:0 0 20px #ff6fa5aa}
+#txt.in{opacity:1}
+#txt.low{top:auto;bottom:12%;transform:none}
+#txt small{display:block;font-size:.45em;margin-top:14px;opacity:.8;font-family:Georgia,serif}
+#start,#end{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;z-index:5}
+#end{display:none;justify-content:flex-end;padding-bottom:6%;pointer-events:none}
+#end button{pointer-events:auto}
+button.b{font:inherit;font-size:clamp(22px,5vw,32px);padding:12px 32px;border-radius:40px;border:2px solid var(--pink);
+background:#ff6fa522;color:var(--soft);cursor:pointer;box-shadow:0 0 25px #ff6fa588;animation:pulse 1.6s infinite}
+@keyframes pulse{50%{transform:scale(1.07)}}
+#hud{position:fixed;top:calc(14px + env(safe-area-inset-top,0px));right:18px;font-size:28px;opacity:0;transition:opacity .6s;z-index:4}
+.h{position:fixed;z-index:3;font-size:34px;cursor:pointer;animation:rise 7s linear forwards;filter:drop-shadow(0 0 8px #ff6fa5)}
+.f{position:fixed;z-index:3;pointer-events:none;font-size:22px;animation:fly 1.6s ease-out forwards}
+.w{position:fixed;z-index:6;pointer-events:none;font-size:26px;animation:fly 1.8s ease-out forwards;color:#fff}
+@keyframes rise{from{transform:translateY(0)}to{transform:translateY(-115vh)}}
+@keyframes fly{from{opacity:1;transform:translateY(0) scale(.6)}to{opacity:0;transform:translateY(-110px) scale(1.4)}}
+</style>
+</head>
+<body>
+<audio id="song" src="chanson.mp3" preload="auto"></audio>
+<button id="mute" style="position:fixed;bottom:calc(12px + env(safe-area-inset-bottom,0px));left:14px;z-index:7;font-size:24px;background:none;border:0;color:#ffd6e5;cursor:pointer;opacity:0">🔊</button>
+<canvas id="sky"></canvas>
+<div id="txt"></div>
+<div id="hud">💗 <span id="n">0</span></div>
+<div id="start"><div style="font-size:clamp(34px,9vw,70px)">Pour Bubu 💗</div>
+<button class="b" id="go">Commencer</button></div>
+<div id="end"><button class="b" id="yes">Clique si tu m'aimes aussi 💞</button>
+<button class="b" id="again" style="font-size:18px;padding:6px 20px;animation:none">Rejouer</button></div>
+<script>
+// ✏️ Personnalise ici
+const NAME="Bubu";
+const WORDS=["ma joie","mon rire","ma douceur","mon câlin","ma paix","mon bonheur","ma force","mon tout"];
+
+const $=s=>document.querySelector(s),wait=ms=>new Promise(r=>setTimeout(r,ms));
+const cv=$('#sky'),cx=cv.getContext('2d'),txt=$('#txt');
+let W,H,stars=[],shoot=[],sp=[],hp=[],heart=false,T=0;
+function rs(){W=cv.width=innerWidth;H=cv.height=innerHeight}
+addEventListener('resize',rs);rs();
+for(let i=0;i<150;i++)stars.push({x:Math.random(),y:Math.random(),r:Math.random()*1.5+.3,p:Math.random()*6});
+
+function burst(x,y,n=14){
+ for(let i=0;i<n;i++){const a=Math.random()*6.28,s=Math.random()*3+1;
+  sp.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,l:1,c:Math.random()<.5?'#ffd6e5':'#ff6fa5'})}
+ const e=document.createElement('div');e.className='f';e.textContent=['💗','✨','💖','⭐'][Math.random()*4|0];
+ e.style.left=x-10+'px';e.style.top=y-10+'px';document.body.appendChild(e);setTimeout(()=>e.remove(),1700);
+}
+addEventListener('pointerdown',e=>{if(e.target.id!=='go')burst(e.clientX,e.clientY)});
+
+function formHeart(){
+ hp=[];const s=Math.min(W,H*1.1)/40;
+ for(let i=0;i<380;i++){
+  const t=Math.random()*6.283,f=Math.random()<.65?1:Math.sqrt(Math.random());
+  const x=16*Math.sin(t)**3,y=-(13*Math.cos(t)-5*Math.cos(2*t)-2*Math.cos(3*t)-Math.cos(4*t));
+  hp.push({x:Math.random()*W,y:Math.random()*H,tx:x*s*f,ty:y*s*f,r:Math.random()*2+1})}
+ heart=true;
+}
+function draw(){
+ T+=.016;cx.clearRect(0,0,W,H);
+ for(const s of stars){cx.globalAlpha=.4+.6*Math.abs(Math.sin(T+s.p));cx.fillStyle='#fff';
+  cx.beginPath();cx.arc(s.x*W,s.y*H,s.r,0,6.283);cx.fill()}
+ if(Math.random()<.006)shoot.push({x:Math.random()*W,y:Math.random()*H*.4,l:1});
+ cx.strokeStyle='#fff';
+ shoot=shoot.filter(o=>{o.x+=9;o.y+=4;o.l-=.02;cx.globalAlpha=o.l;cx.beginPath();cx.moveTo(o.x,o.y);cx.lineTo(o.x-70,o.y-30);cx.stroke();return o.l>0});
+ sp=sp.filter(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=.05;p.l-=.02;cx.globalAlpha=Math.max(p.l,0);cx.fillStyle=p.c;
+  cx.beginPath();cx.arc(p.x,p.y,2.5,0,6.283);cx.fill();return p.l>0});
+ if(heart){const k=1+.05*Math.sin(T*4),cxm=W/2,cym=H*.4;
+  for(const p of hp){p.x+=(cxm+p.tx*k-p.x)*.025;p.y+=(cym+p.ty*k-p.y)*.025;
+   cx.globalAlpha=.9;cx.fillStyle='#ff6fa5';cx.shadowBlur=12;cx.shadowColor='#ff6fa5';
+   cx.beginPath();cx.arc(p.x,p.y,p.r,0,6.283);cx.fill()}cx.shadowBlur=0}
+ cx.globalAlpha=1;requestAnimationFrame(draw);
+}
+draw();
+
+async function line(html,ms,low){
+ txt.className=low?'low':'';txt.innerHTML=html;void txt.offsetWidth;txt.classList.add('in');
+ await wait(ms);txt.classList.remove('in');await wait(1000);
+}
+
+let caught=0,spawning=false;
+function spawnHeart(){
+ const h=document.createElement('div');h.className='h';h.textContent='❤️';
+ h.style.left=Math.random()*(innerWidth-50)+'px';h.style.top=innerHeight+'px';
+ h.style.animationDuration=(5+Math.random()*3)+'s';
+ h.onpointerdown=e=>{e.stopPropagation();const r=h.getBoundingClientRect();burst(r.left,r.top,22);
+  const w=document.createElement('div');w.className='w';w.textContent=WORDS[caught%WORDS.length];
+  w.style.left=r.left-20+'px';w.style.top=r.top-30+'px';document.body.appendChild(w);setTimeout(()=>w.remove(),1900);
+  caught++;$('#n').textContent=caught;h.remove()};
+ h.onanimationend=()=>h.remove();document.body.appendChild(h);
+}
+async function catchGame(ms){
+ $('#hud').style.opacity=1;spawning=true;
+ const iv=setInterval(spawnHeart,650);await wait(ms);clearInterval(iv);spawning=false;
+ await wait(7000);$('#hud').style.opacity=0;
+}
+
+async function run(){
+ const a=$('#song');a.currentTime=0;a.volume=1;a.play().catch(()=>{});$('#mute').style.opacity=.8;
+ $('#start').style.display='none';$('#end').style.display='none';heart=false;caught=0;$('#n').textContent=0;
+ await line(`${NAME}...`,5000);
+ await line("J'ai quelque chose à te dire",5500);
+ await line(`Mais d'abord, touche l'écran<small>fais apparaître des étoiles ✨</small>`,15000);
+ await line("Tu es la plus belle chose<br>qui me soit arrivée",6000);
+ await line("Ton sourire illumine<br>toutes mes journées",6000);
+ await line("Avec toi, tout est plus doux",6000);
+ const g=catchGame(15000);
+ await line(`Attrape les cœurs !<small>chacun cache un mot pour toi 💗</small>`,15000);
+ await g;
+ await line("Chaque jour à tes côtés<br>est un cadeau",6000);
+ await line("Alors je voulais te le dire...",5500);
+ formHeart();await wait(5000);
+ await line(`Je t'aime, ${NAME} 💗`,9000,true);
+ await line("Merci d'être toi",7000,true);
+ await line("Pour toujours,<br>et encore plus demain",8000,true);
+ txt.className='low in';txt.innerHTML=`Je t'aime ${NAME} 💗`;
+ $('#end').style.display='flex';
+}
+$('#mute').onclick=e=>{e.stopPropagation();const a=$('#song');a.muted=!a.muted;e.target.textContent=a.muted?'🔇':'🔊'};
+$('#go').onclick=run;
+$('#again').onclick=()=>{heart=false;run()};
+$('#yes').onclick=e=>{e.stopPropagation();for(let i=0;i<12;i++)setTimeout(()=>burst(Math.random()*W,Math.random()*H,20),i*120)};
+</script>
+</body>
+</html>
